@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HỆ THỐNG VŨ TRỤ NGẦM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0b0e14;
+            color: #f0f4fa;
+            min-height: 100vh;
+        }
+
+        /* ===== AUTH ===== */
+        #authScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 14, 20, 0.96);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+        }
+        .auth-box {
+            background: #161c2e; padding: 40px 35px; border-radius: 20px;
+            width: 420px; max-width: 90%;
+            border: 2px solid #ffd700;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        .auth-title { font-size: 26px; font-weight: 900; color: #ffd700; text-align: center; margin-bottom: 8px; }
+        .auth-sub { text-align: center; color: #8b93a0; font-size: 14px; margin-bottom: 25px; }
+        .auth-tabs {
+            display: flex; gap: 0; border-bottom: 1px solid #2a3142; margin-bottom: 25px;
+        }
+        .auth-tab {
+            flex: 1; text-align: center; padding: 12px 0; font-weight: 700;
+            color: #8b93a0; cursor: pointer; transition: 0.3s;
+        }
+        .auth-tab.active { color: #ffd700; border-bottom: 3px solid #ffd700; }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; color: #8b93a0; font-size: 13px; margin-bottom: 4px; }
+        .form-group input {
+            width: 100%; padding: 12px 16px; background: #0b0e14;
+            border: 1px solid #2a3142; border-radius: 10px; color: white;
+            font-size: 15px; outline: none; transition: 0.2s;
+        }
+        .form-group input:focus { border-color: #ffd700; }
+        .btn-auth {
+            width: 100%; padding: 14px; border: none; border-radius: 10px;
+            font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.2s; margin-top: 8px;
+        }
+        .btn-auth.login { background: #ffd700; color: #0b0e14; }
+        .btn-auth.login:hover { background: #f5c800; }
+        .btn-auth.register { background: #10b981; color: white; }
+        .btn-auth.register:hover { background: #059669; }
+        .auth-switch { text-align: center; margin-top: 14px; font-size: 14px; color: #8b93a0; }
+        .auth-switch span { color: #ffd700; cursor: pointer; font-weight: 600; }
+        .auth-error { background: #7f1d1d; color: #fca5a5; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+        /* ===== DASHBOARD ===== */
+        #dashboard { display: none; min-height: 100vh; }
+
+        /* Switcher */
+        .system-switcher {
+            background: #1e293b; padding: 12px 16px;
+            display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+            border-bottom: 2px solid #334155; position: sticky; top: 0; z-index: 1000;
+        }
+        .btn-switch {
+            padding: 8px 18px; border-radius: 8px; font-weight: 700; cursor: pointer;
+            border: none; font-size: 13px; transition: 0.3s;
+        }
+        .btn-switch.job { background: #10b981; color: white; }
+        .btn-switch.thief { background: #e11d48; color: white; }
+        .btn-switch.casino { background: #ffd700; color: black; }
+        .btn-switch.bank { background: #0284c7; color: white; }
+        .btn-switch.loan { background: #9333ea; color: white; }
+        .btn-switch.admin { background: #ef4444; color: white; }
+        .btn-switch.inactive { opacity: 0.4; filter: grayscale(50%); }
+
+        .user-top {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+            margin-left: auto;
+        }
+        .user-top .name { font-weight: 600; color: #f0f4fa; }
+        .user-top .bal { background: #1e293b; padding: 4px 14px; border-radius: 20px; font-size: 13px; border: 1px solid #ffd700; color: #ffd700; }
+        .btn-logout { background: #ef4444; color: white; padding: 6px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; }
+        .btn-logout:hover { background: #dc2626; }
+
+        /* ===== MODULES ===== */
+        .module { display: none; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .module.active { display: block; }
+
+        .module-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 15px; margin-bottom: 20px; border-bottom: 2px solid #ffd700;
+            flex-wrap: wrap; gap: 10px;
+        }
+        .module-header .title { font-size: 24px; font-weight: 800; }
+        .module-header .sub { font-size: 14px; color: #8b93a0; }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;
+        }
+        .card {
+            background: #161c2e; padding: 20px; border-radius: 16px; border: 1px solid #2a3142;
+            text-align: center; transition: 0.2s;
+        }
+        .card:hover { border-color: #ffd700; transform: translateY(-2px); }
+        .card .icon { font-size: 32px; margin-bottom: 8px; }
+        .card .name { font-weight: 700; font-size: 16px; }
+        .card .desc { font-size: 13px; color: #8b93a0; margin: 6px 0; }
+        .card .btn-do {
+            width: 100%; padding: 10px; border: none; border-radius: 8px;
+            font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 8px;
+        }
+        .card .btn-do.green { background: #10b981; color: white; }
+        .card .btn-do.green:hover { background: #059669; }
+        .card .btn-do.red { background: #e11d48; color: white; }
+        .card .btn-do.red:hover { background: #be123c; }
+        .card .btn-do.gold { background: #ffd700; color: black; }
+        .card .btn-do.gold:hover { background: #f5c800; }
+
+        /* Balance Bar */
+        .balance-bar {
+            background: #161c2e; padding: 20px 24px; border-radius: 16px;
+            border: 1px solid #ffd700; display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;
+        }
+        .balance-bar .label { font-size: 14px; color: #8b93a0; }
+        .balance-bar .amount { font-size: 28px; font-weight: 800; color: #ffd700; }
+
+        /* Chip */
+        .chip-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+        .chip {
+            width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: 700; font-size: 11px; cursor: pointer;
+            border: 3px solid transparent; transition: 0.2s; color: white;
+        }
+        .chip.active { border-color: #ffd700; transform: scale(1.1); }
+        .chip.c1 { background: #0369a1; }
+        .chip.c2 { background: #16a34a; }
+        .chip.c3 { background: #dc2626; }
+        .chip.c4 { background: #a855f7; }
+
+        .game-buttons { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+        .btn-game { padding: 12px 30px; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; color: white; }
+        .btn-game.tai { background: #1e40af; }
+        .btn-game.tai:hover { background: #1d3b8a; }
+        .btn-game.xiu { background: #9333ea; }
+        .btn-game.xiu:hover { background: #7e22ce; }
+
+        .result-box { margin-top: 16px; padding: 16px; border-radius: 12px; text-align: center; font-weight: 700; display: none; }
+        .result-box.win { display: block; background: #065f46; border: 1px solid #10b981; color: #6ee7b7; }
+        .result-box.lose { display: block; background: #7f1d1d; border: 1px solid #ef4444; color: #fca5a5; }
+
+        /* Bank */
+        .bank-card {
+            background: linear-gradient(135deg, #0284c7 0%, #1e3a8a 100%);
+            padding: 24px; border-radius: 16px; margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .bank-card .label { font-size: 13px; color: #bae6fd; text-transform: uppercase; }
+        .bank-card .amount { font-size: 34px; font-weight: 800; color: white; margin: 6px 0; }
+        .bank-card .sub { font-size: 13px; color: #e0f2fe; }
+
+        .btn-action-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn-action { padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; flex: 1 1 150px; }
+        .btn-action.gold { background: #ffd700; color: black; }
+        .btn-action.gold:hover { background: #f5c800; }
+        .btn-action.green { background: #10b981; color: white; }
+        .btn-action.green:hover { background: #059669; }
+        .btn-action.red { background: #ef4444; color: white; }
+        .btn-action.red:hover { background: #dc2626; }
+
+        /* History */
+        .history-box { background: #1e293b; padding: 16px 20px; border-radius: 12px; max-height: 200px; overflow-y: auto; }
+        .history-box .h-title { font-size: 14px; color: #8b93a0; margin-bottom: 10px; font-weight: 600; }
+        .history-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #2a3142; font-size: 13px; }
+        .history-item .win { color: #10b981; }
+        .history-item .lose { color: #ef4444; }
+
+        /* Admin */
+        .admin-stats {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;
+        }
+        .admin-stat {
+            background: #1e293b; padding: 16px 20px; border-radius: 12px; border-left: 4px solid #ef4444;
+        }
+        .admin-stat .label { font-size: 12px; color: #8b93a0; text-transform: uppercase; }
+        .admin-stat .value { font-size: 22px; font-weight: 800; color: #f87171; margin-top: 4px; }
+
+        @media (max-width: 600px) {
+            .auth-box { padding: 24px 18px; }
+            .system-switcher { gap: 6px; }
+            .btn-switch { font-size: 11px; padding: 6px 12px; }
+            .module { padding: 12px; }
+            .balance-bar .amount { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== AUTH ===== -->
+    <div id="authScreen">
+        <div class="auth-box">
+            <div class="auth-title">👑 ROYAL CASINO</div>
+            <div class="auth-sub">Đăng nhập để trải nghiệm vũ trụ ngầm</div>
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="switchAuth('login')">ĐĂNG NHẬP</div>
+                <div class="auth-tab" onclick="switchAuth('register')">ĐĂNG KÝ</div>
+            </div>
+            <div id="authError" class="auth-error"></div>
+            <div id="loginForm" class="auth-form active">
+                <div class="form-group"><label>Tên tài khoản</label><input type="text" id="loginUser" placeholder="Nhập tên..." /></div>
+                <div class="form-group"><label>Mật khẩu</label><input type="password" id="loginPass" placeholder="Nhập mật khẩu..." /></div>
+                <button class="btn-auth login" onclick="handleLogin()">ĐĂNG NHẬP</button>
+                <div class="auth-switch">Chưa có tài khoản? <span onclick="switchAuth('register')">Đăng ký ngay</span></div>
+            </div>
+            <div id="registerForm" class="auth-form">
+                <div class="form-group"><label>Tên tài khoản mới</label><input type="text" id="regUser" placeholder="Chọn tên..." /></div>
+                <div class="form-group"><label>Mật khẩu</label><input type="password" id="regPass" placeholder="Tạo mật khẩu..." /></div>
+                <button class="btn-auth register" onclick="handleRegister()">🎁 ĐĂNG KÝ (Tặng 50K)</button>
+                <div class="auth-switch">Đã có tài khoản? <span onclick="switchAuth('login')">Đăng nhập</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="dashboard">
+
+        <!-- Switcher -->
+        <div class="system-switcher">
+            <button class="btn-switch casino" onclick="switchModule('casino')">🎰 CASINO</button>
+            <button class="btn-switch job inactive" onclick="switchModule('job')">💼 VIỆC LÀM</button>
+            <button class="btn-switch thief inactive" onclick="switchModule('thief')">🥷 TRỘM CẮP</button>
+            <button class="btn-switch bank inactive" onclick="switchModule('bank')">🏦 NGÂN HÀNG</button>
+            <button class="btn-switch loan inactive" onclick="switchModule('loan')">📱 TÍN DỤNG ĐEN</button>
+            <button class="btn-switch admin inactive" onclick="switchModule('admin')">👑 ADMIN</button>
+            <div class="user-top">
+                <span class="name" id="dashUser">User</span>
+                <span class="bal" id="dashBal">0 VNĐ</span>
+                <button class="btn-logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+
+        <!-- ===== MODULE: CASINO ===== -->
+        <div id="module-casino" class="module active">
+            <div class="module-header">
+                <div class="title">🎰 SẢNH CASINO</div>
+                <div class="sub">Sòng bạc trực tuyến đẳng cấp</div>
+            </div>
+
+            <div class="balance-bar">
+                <div>
+                    <div class="label">Số dư Casino</div>
+                    <div class="amount" id="casinoBal">10,000,000 VNĐ</div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn-action gold" onclick="depositMoney()">NẠP TIỀN</button>
+                    <button class="btn-action green" onclick="withdrawMoney()">RÚT TIỀN</button>
+                </div>
+            </div>
+
+            <div style="background:#111827;padding:24px;border-radius:16px;border:1px solid #ffd700;margin-bottom:20px;">
+                <h3 style="color:#ffd700;text-align:center;margin-bottom:16px;">🎲 TÀI XỈU SIÊU TỐC</h3>
+                <div class="chip-group">
+                    <div class="chip c1 active" data-val="50000" onclick="selectChip(this)">50K</div>
+                    <div class="chip c2" data-val="200000" onclick="selectChip(this)">200K</div>
+                    <div class="chip c3" data-val="1000000" onclick="selectChip(this)">1M</div>
+                    <div class="chip c4" data-val="5000000" onclick="selectChip(this)">5M</div>
+                </div>
+                <div style="text-align:center;color:#8b93a0;margin:8px 0;">Bạn đang chọn: <span style="color:#ffd700;font-weight:700;" id="betDisplay">50,000 VNĐ</span></div>
+                <div class="game-buttons">
+                    <button class="btn-game tai" onclick="playGame('TÀI')">📈 ĐẶT CƯỢC TÀI</button>
+                    <button class="btn-game xiu" onclick="playGame('XỈU')">📉 ĐẶT CƯỢC XỈU</button>
+                </div>
+                <div class="result-box" id="resultBox"><span id="resultText"></span><div id="resultDetail"></div></div>
+            </div>
+
+            <div class="history-box">
+                <div class="h-title">📜 Lịch sử cược</div>
+                <div id="casinoHistory"><div class="history-item"><span>Chưa có cược nào</span></div></div>
+            </div>
+        </div>
+
+        <!-- ===== MODULE: VIỆC LÀM ===== -->
+        <div id="module-job" class="module">
+            <div class="module-header">
+                <div class="title" style="color:#10b981;">🌱 TRUNG TÂM VIỆC LÀM CHÂN CHÍNH</div>
+                <div class="sub">Lao động là vinh quang! Kiếm tiền sạch bỏ ống heo</div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">📄</div>
+                    <div class="name">Phát Tờ Rơi Dạo</div>
+                    <div class="desc">Mức lương: 100,000 VNĐ / ca<br>Thời gian: 1 phút</div>
+                    <button class="btn-do green" onclick="doJob('Phát tờ rơi', 100000)">NHẬN VIỆC (100K)</button>
+                </div>
+                <div class="card">
+                    <div class="icon">💻</div>
+                    <div class="name">Lập Trình Viên Web</div>
+                    <div class="desc">Mức lương: 500,000 VNĐ / ca<br>Thời gian: Sửa lỗi code</div>
+                    <button class="btn-do green" onclick="doJob('Code web', 500000)">NHẬN VIỆC (500K)</button>
+                </div>
+                <div class="card">
+                    <div class="icon">🛵</div>
+                    <div class="name">Chạy GrabBike</div>
+                    <div class="desc">Mức lương: 300,000 VNĐ / ca<br>Thời gian: Chở khách</div>
+                    <button class="btn-do green" onclick="doJob('Chạy GrabBike', 300000)">NHẬN VIỆC (300K)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== MODULE: TRỘM CẮP ===== -->
+        <div id="module-thief" class="module">
+            <div class="module-header">
+                <div class="title" style="color:#e11d48;">🥷 THẾ GIỚI NGẦM: PHI VỤ TRỘM CẮP</div>
+                <div class="sub">Kiếm tiền nhanh nhưng đầy rủi ro pháp lý!</div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">🏍️</div>
+                    <div class="name">Trộm xe máy vỉa hè</div>
+                    <div class="desc">Tiền: 500,000 VNĐ<br>Tỷ lệ bị bắt: 20%</div>
+                    <button class="btn-do red" onclick="doThief('xe máy', 500000, 0.2)">ĐỘT NHẬP (500K)</button>
+                </div>
+                <div class="card">
+                    <div class="icon">🏢</div>
+                    <div class="name">Đột nhập văn phòng</div>
+                    <div class="desc">Tiền: 3,000,000 VNĐ<br>Tỷ lệ bị bắt: 50%</div>
+                    <button class="btn-do red" onclick="doThief('văn phòng', 3000000, 0.5)">ĐỘT NHẬP (3M)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== MODULE: NGÂN HÀNG ===== -->
+        <div id="module-bank" class="module">
+            <div class="module-header">
+                <div class="title" style="color:#0284c7;">🏦 TECH-BANK DIGITAL</div>
+                <div class="sub">Chủ tài khoản: <b id="bankUser">User</b></div>
+            </div>
+            <div class="bank-card">
+                <div class="label">Số dư tài khoản thanh toán thực tế</div>
+                <div class="amount" id="bankBal">20,000,000 VNĐ</div>
+                <div class="sub">STK: 190388888888 | Trạng thái: Hoạt động</div>
+                <div class="sub" id="loanInfo">Dư nợ ngân hàng: 0 VNĐ</div>
+            </div>
+            <div class="btn-action-row">
+                <button class="btn-action gold" onclick="openLoanModal()">💸 ĐĂNG KÝ VAY NGÂN HÀNG</button>
+                <button class="btn-action red" onclick="openPayLoanModal()">💳 TRẢ GỐC VAY</button>
+            </div>
+            <div class="history-box">
+                <div class="h-title">Lịch sử giao dịch ngân hàng</div>
+                <div id="bankHistory"><div class="history-item"><span>[Khởi tạo] Tiền mặt ban đầu</span><span class="win">+20,000,000 VNĐ</span></div></div>
+            </div>
+        </div>
+
+        <!-- ===== MODULE: TÍN DỤNG ĐEN ===== -->
+        <div id="module-loan" class="module">
+            <div class="module-header">
+                <div class="title" style="color:#9333ea;">📱 HỆ THỐNG TÍN DỤNG ĐEN</div>
+                <div class="sub">Trạng thái: <b style="color:#ef4444;">Bị truy nã danh bạ</b></div>
+            </div>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="icon">💰</div>
+                    <div class="name">VayCucTốc.vn</div>
+                    <div class="desc">Hạn mức: 2,000,000 VNĐ<br>Lãi: 30%/ngày</div>
+                    <button class="btn-do red" onclick="borrowBlack('VayCucTốc', 2000000)">VAY NGAY 2TR</button>
+                </div>
+                <div class="card">
+                    <div class="icon">🔥</div>
+                    <div class="name">Thần Tài Đến</div>
+                    <div class="desc">Hạn mức: 5,000,000 VNĐ<br>Lãi: 50%/ngày</div>
+                    <button class="btn-do red" onclick="borrowBlack('Thần Tài Đến', 5000000)">VAY NGAY 5TR</button>
+                </div>
+                <div class="card">
+                    <div class="icon">📞</div>
+                    <div class="name">AloVayGấp 247</div>
+                    <div class="desc">Hạn mức: 10,000,000 VNĐ<br>Lãi: 100%/ngày</div>
+                    <button class="btn-do red" onclick="borrowBlack('AloVayGấp', 10000000)">VAY NGAY 10TR</button>
+                </div>
+            </div>
+            <div style="background:#2e1065;padding:16px 20px;border-radius:12px;border:1px dashed #ef4444;margin-top:12px;">
+                <div class="h-title" style="color:#ef4444;">⚠️ Tổng dư nợ tín dụng đen</div>
+                <div class="history-item"><span>Tổng gốc & lãi các app</span><span class="lose" id="blackDebtDisplay">0 VNĐ</span></div>
+                <div style="color:#fca5a5;font-size:13px;margin-top:6px;" id="collectionStatus">Trạng thái: Chưa đến hạn</div>
+                <button class="btn-do red" style="margin-top:12px;width:100%;" onclick="payBlackDebt()">THANH TOÁN HẾT NỢ APP ĐEN</button>
+            </div>
+        </div>
+
+        <!-- ===== MODULE: ADMIN ===== -->
+        <div id="module-admin" class="module">
+            <div class="module-header">
+                <div class="title" style="color:#ef4444;">👑 BẢNG ĐIỀU KHIỂN NHÀ CÁI (ADMIN)</div>
+                <div class="sub">Quyền hạn: <b>Tối cao</b></div>
+            </div>
+            <div class="admin-stats">
+                <div class="admin-stat"><div class="label">Tổng tiền NẠP</div><div class="value" id="adminDeposit">0 VNĐ</div></div>
+                <div class="admin-stat"><div class="label">Tổng tiền RÚT</div><div class="value" id="adminWithdraw">0 VNĐ</div></div>
+                <div class="admin-stat" style="border-left-color:#f59e0b;"><div class="label">Dư nợ Ngân Hàng</div><div class="value" style="color:#f59e0b;" id="adminLoan">0 VNĐ</div></div>
+                <div class="admin-stat" style="border-left-color:#9333ea;"><div class="label">Dư nợ Tín Dụng Đen</div><div class="value" style="color:#c084fc;" id="adminBlack">0 VNĐ</div></div>
+                <div class="admin-stat" style="border-left-color:#10b981;"><div class="label">LỢI NHUẬN (NET)</div><div class="value" style="color:#10b981;" id="adminProfit">0 VNĐ</div></div>
+            </div>
+            <div class="history-box">
+                <div class="h-title" style="color:#ef4444;">Nhật Ký Thu Thập & Ván Cược</div>
+                <div id="adminLog"><div class="history-item"><span>[Hệ thống] Khởi tạo thành công</span><span style="color:#8b93a0;">Hôm nay</span></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL VAY ===== -->
+    <div style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:2000;justify-content:center;align-items:center;" id="loanModal" onclick="if(event.target===this)closeLoanModal()">
+        <div style="background:#161c2e;padding:30px;border-radius:16px;width:400px;max-width:90%;border:2px solid #ffd700;">
+            <div style="text-align:right;cursor:pointer;color:#8b93a0;font-size:20px;" onclick="closeLoanModal()">&times;</div>
+            <div style="color:#ffd700;font-size:20px;font-weight:700;text-align:center;margin-bottom:16px;">💸 GÓI VAY NGÂN HÀNG</div>
+            <div class="form-group">
+                <label>Chọn hạn mức</label>
+                <select id="loanAmount" style="width:100%;padding:12px;background:#0b0e14;border:1px solid #2a3142;border-radius:10px;color:white;font-size:15px;">
+                    <option value="5000000">5,000,000 VNĐ</option>
+                    <option value="10000000">10,000,000 VNĐ</option>
+                    <option value="50000000">50,000,000 VNĐ</option>
+                </select>
+            </div>
+            <button class="btn-auth login" onclick="submitLoan()">XÁC NHẬN GIẢI NGÂN</button>
+        </div>
+    </div>
+
+    <!-- ===== MODAL TRẢ NỢ ===== -->
+    <div style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:2000;justify-content:center;align-items:center;" id="payLoanModal" onclick="if(event.target===this)closePayLoanModal()">
+        <div style="background:#161c2e;padding:30px;border-radius:16px;width:400px;max-width:90%;border:2px solid #ef4444;">
+            <div style="text-align:right;cursor:pointer;color:#8b93a0;font-size:20px;" onclick="closePayLoanModal()">&times;</div>
+            <div style="color:#ef4444;font-size:20px;font-weight:700;text-align:center;margin-bottom:16px;">💳 TRẢ NỢ NGÂN HÀNG</div>
+            <div class="form-group">
+                <label>Số tiền muốn trả</label>
+                <input type="number" id="payAmount" style="width:100%;padding:12px;background:#0b0e14;border:1px solid #2a3142;border-radius:10px;color:white;font-size:15px;" value="5000000">
+            </div>
+            <button class="btn-auth" style="background:#ef4444;color:white;" onclick="submitPayLoan()">XÁC NHẬN TRẢ NỢ</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // DỮ LIỆU
+        // ============================================================
+        let currentUser = null;
+        let currentBet = 50000;
+        let userData = {};
+
+        function getUsers() { return JSON.parse(localStorage.getItem('dark_universe_users')) || {}; }
+
+        function saveUsers(u) { localStorage.setItem('dark_universe_users', JSON.stringify(u)); }
+
+        function getUser() {
+            if (!currentUser) return null;
+            const users = getUsers();
+            return users[currentUser] || null;
+        }
+
+        function saveUser(data) {
+            const users = getUsers();
+            users[currentUser] = data;
+            saveUsers(users);
+        }
+
+        function initUser() {
+            return {
+                pass: '',
+                casino: 10000000,
+                bank: 20000000,
+                loan: 0,
+                blackDebt: 0,
+                totalWin: 0,
+                history: [{ text: '[Khởi tạo] Tiền mặt ban đầu', amount: 20000000, isWin: true }],
+                casinoHistory: []
+            };
+        }
+
+        // ============================================================
+        // AUTH
+        // ============================================================
+        function switchAuth(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', false));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.toggle('active', false));
+            if (tab === 'login') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            }
+            document.getElementById('authError').style.display = 'none';
+        }
+
+        function showError(msg) {
+            const e = document.getElementById('authError');
+            e.textContent = '❌ ' + msg;
+            e.style.display = 'block';
+        }
+
+        function handleRegister() {
+            const user = document.getElementById('regUser').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+            if (!user || !pass) { showError('Vui lòng nhập đầy đủ!'); return; }
+            if (user.length < 3) { showError('Tên ít nhất 3 ký tự!'); return; }
+            const users = getUsers();
+            if (users[user]) { showError('Tài khoản đã tồn tại!'); return; }
+            const data = initUser();
+            data.pass = pass;
+            users[user] = data;
+            saveUsers(users);
+            alert('✅ Đăng ký thành công! Tặng 50.000 VNĐ vào ví Casino.');
+            document.getElementById('regUser').value = '';
+            document.getElementById('regPass').value = '';
+            switchAuth('login');
+        }
+
+        function handleLogin() {
+            const user = document.getElementById('loginUser').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            if (!user || !pass) { showError('Vui lòng nhập tên và mật khẩu!'); return; }
+            const users = getUsers();
+            if (!users[user]) { showError('Tài khoản không tồn tại!'); return; }
+            if (users[user].pass !== pass) { showError('Mật khẩu không đúng!'); return; }
+            currentUser = user;
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('dashUser').textContent = user;
+            document.getElementById('bankUser').textContent = user;
+            updateAll();
+            document.getElementById('loginUser').value = '';
+            document.getElementById('loginPass').value = '';
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('authScreen').style.display = 'flex';
+        }
+
+        // ============================================================
+        // UPDATE UI
+        // ============================================================
+        function updateAll() {
+            const data = getUser();
+            if (!data) return;
+            document.getElementById('casinoBal').textContent = data.casino.toLocaleString() + ' VNĐ';
+            document.getElementById('dashBal').textContent = data.casino.toLocaleString() + ' VNĐ';
+            document.getElementById('bankBal').textContent = data.bank.toLocaleString() + ' VNĐ';
+            document.getElementById('loanInfo').textContent = 'Dư nợ ngân hàng: ' + data.loan.toLocaleString() + ' VNĐ';
+            document.getElementById('blackDebtDisplay').textContent = data.blackDebt.toLocaleString() + ' VNĐ';
+
+            // Casino history
+            const ch = document.getElementById('casinoHistory');
+            if (data.casinoHistory && data.casinoHistory.length > 0) {
+                ch.innerHTML = data.casinoHistory.slice().reverse().map(h =>
+                    `<div class="history-item"><span>${h.text}</span><span class="${h.isWin ? 'win' : 'lose'}">${h.isWin ? '+' : '-'}${h.amount.toLocaleString()} VNĐ</span></div>`
+                ).join('');
+            } else {
+                ch.innerHTML = '<div class="history-item"><span>Chưa có cược nào</span></div>';
+            }
+
+            // Bank history
+            const bh = document.getElementById('bankHistory');
+            if (data.history && data.history.length > 0) {
+                bh.innerHTML = data.history.slice().reverse().map(h =>
+                    `<div class="history-item"><span>${h.text}</span><span class="${h.isWin ? 'win' : 'lose'}">${h.isWin ? '+' : '-'}${h.amount.toLocaleString()} VNĐ</span></div>`
+                ).join('');
+            }
+
+            // Admin
+            const users = getUsers();
+            let totalDeposit = 0,
+                totalWithdraw = 0,
+                totalLoan = 0,
+                totalBlack = 0,
+                profit = 0;
+            for (const key in users) {
+                const u = users[key];
+                totalLoan += u.loan || 0;
+                totalBlack += u.blackDebt || 0;
+            }
+            document.getElementById('adminDeposit').textContent = totalDeposit.toLocaleString() + ' VNĐ';
+            document.getElementById('adminWithdraw').textContent = totalWithdraw.toLocaleString() + ' VNĐ';
+            document.getElementById('adminLoan').textContent = totalLoan.toLocaleString() + ' VNĐ';
+            document.getElementById('adminBlack').textContent = totalBlack.toLocaleString() + ' VNĐ';
+            document.getElementById('adminProfit').textContent = profit.toLocaleString() + ' VNĐ';
+        }
+
+        // ============================================================
+        // MODULE SWITCH
+        // ============================================================
+        function switchModule(name) {
+            document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+            document.getElementById('module-' + name).classList.add('active');
+            document.querySelectorAll('.btn-switch').forEach(b => b.classList.add('inactive'));
+            const map = { casino: '.casino', job: '.job', thief: '.thief', bank: '.bank', loan: '.loan', admin: '.admin' };
+            document.querySelector(map[name]).classList.remove('inactive');
+            if (name === 'admin') updateAll();
+        }
+
+        // ============================================================
+        // CASINO
+        // ============================================================
+        function selectChip(el) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            currentBet = parseInt(el.getAttribute('data-val'));
+            document.getElementById('betDisplay').textContent = currentBet.toLocaleString() + ' VNĐ';
+        }
+
+        function playGame(choice) {
+            const data = getUser();
+            if (!data) { alert('Vui lòng đăng nhập!'); return; }
+            if (data.casino < currentBet) { alert('❌ Không đủ tiền!'); return; }
+            const result = Math.random() < 0.5 ? 'TÀI' : 'XỈU';
+            const isWin = choice === result;
+            const box = document.getElementById('resultBox');
+            const txt = document.getElementById('resultText');
+            const detail = document.getElementById('resultDetail');
+            if (isWin) {
+                data.casino += currentBet;
+                data.totalWin += currentBet;
+                box.className = 'result-box win';
+                txt.textContent = '🎉 THẮNG! +' + currentBet.toLocaleString() + ' VNĐ';
+                detail.textContent = 'Kết quả: ' + result + ' | Bạn chọn: ' + choice;
+                if (!data.casinoHistory) data.casinoHistory = [];
+                data.casinoHistory.push({ text: choice + ' → Thắng', amount: currentBet, isWin: true });
+            } else {
+                data.casino -= currentBet;
+                box.className = 'result-box lose';
+                txt.textContent = '❌ THUA! -' + currentBet.toLocaleString() + ' VNĐ';
+                detail.textContent = 'Kết quả: ' + result + ' | Bạn chọn: ' + choice;
+                if (!data.casinoHistory) data.casinoHistory = [];
+                data.casinoHistory.push({ text: choice + ' → Thua', amount: currentBet, isWin: false });
+            }
+            saveUser(data);
+            updateAll();
+            setTimeout(() => { box.className = 'result-box'; }, 3000);
+        }
+
+        function depositMoney() {
+            const data = getUser();
+            if (!data) return;
+            const amt = parseInt(prompt('💰 Nhập số tiền nạp (Tối đa 10.000.000):', '500000'));
+            if (!amt || amt <= 0 || amt > 10000000) { alert('Số tiền không hợp lệ!'); return; }
+            if (data.bank < amt) { alert('Không đủ tiền trong ngân hàng!'); return; }
+            data.bank -= amt;
+            data.casino += amt;
+            data.history.push({ text: 'Nạp ' + amt.toLocaleString() + ' vào Casino', amount: amt, isWin: true });
+            saveUser(data);
+            updateAll();
+            alert('✅ Nạp thành công ' + amt.toLocaleString() + ' VNĐ vào Casino!');
+        }
+
+        function withdrawMoney() {
+            const data = getUser();
+            if (!data) return;
+            const amt = parseInt(prompt('💳 Nhập số tiền rút (Tối đa 10.000.000):', '100000'));
+            if (!amt || amt <= 0 || amt > 10000000) { alert('Số tiền không hợp lệ!'); return; }
+            if (data.casino < amt) { alert('Không đủ tiền trong Casino!'); return; }
+            data.casino -= amt;
+            data.bank += amt;
+            data.history.push({ text: 'Rút ' + amt.toLocaleString() + ' về Ngân hàng', amount: amt, isWin: true });
+            saveUser(data);
+            updateAll();
+            alert('✅ Rút thành công ' + amt.toLocaleString() + ' VNĐ về Ngân hàng!');
+        }
+
+        // ============================================================
+        // JOB
+        // ============================================================
+        function doJob(name, salary) {
+            const data = getUser();
+            if (!data) return;
+            data.bank += salary;
+            data.history.push({ text: '[Lương] ' + name, amount: salary, isWin: true });
+            saveUser(data);
+            updateAll();
+            alert('✅ Làm việc thành công! Nhận ' + salary.toLocaleString() + ' VNĐ.');
+        }
+
+        // ============================================================
+        // THIEF
+        // ============================================================
+        let isWanted = false;
+
+        function doThief(target, money, catchChance) {
+            if (isWanted) { alert('🚨 Bạn đang bị truy nã! Không thể trộm.'); return; }
+            const data = getUser();
+            if (!data) return;
+            if (Math.random() < catchChance) {
+                isWanted = true;
+                const fine = money * 0.5;
+                data.bank = Math.max(0, data.bank - fine);
+                saveUser(data);
+                updateAll();
+                alert('❌ BỊ BẮT! Phạt ' + fine.toLocaleString() + ' VNĐ. Truy nã 60s.');
+                setTimeout(() => { isWanted = false;
+                    alert('✅ Đã xóa truy nã.'); }, 60000);
+            } else {
+                data.bank += money;
+                data.history.push({ text: '[Trộm] ' + target, amount: money, isWin: true });
+                saveUser(data);
+                updateAll();
+                alert('💰 Thành công! Lấy được ' + money.toLocaleString() + ' VNĐ.');
+            }
+        }
+
+        // ============================================================
+        // BANK LOAN
+        // ============================================================
+        function openLoanModal() { document.getElementById('loanModal').style.display = 'flex'; }
+
+        function closeLoanModal() { document.getElementById('loanModal').style.display = 'none'; }
+
+        function submitLoan() {
+            const data = getUser();
+            if (!data) return;
+            const amt = parseInt(document.getElementById('loanAmount').value);
+            data.bank += amt;
+            data.loan += amt;
+            data.history.push({ text: '[Vay NH] Giải ngân ' + amt.toLocaleString(), amount: amt, isWin: true });
+            saveUser(data);
+            updateAll();
+            closeLoanModal();
+            alert('✅ Giải ngân ' + amt.toLocaleString() + ' VNĐ vào Ngân hàng!');
+        }
+
+        function openPayLoanModal() {
+            const data = getUser();
+            if (!data || data.loan <= 0) { alert('Bạn không có nợ ngân hàng!'); return; }
+            document.getElementById('payAmount').value = data.loan;
+            document.getElementById('payLoanModal').style.display = 'flex';
+        }
+
+        function closePayLoanModal() { document.getElementById('payLoanModal').style.display = 'none'; }
+
+        function submitPayLoan() {
+            const data = getUser();
+            if (!data) return;
+            const amt = parseInt(document.getElementById('payAmount').value);
+            if (amt <= 0 || amt > data.loan || data.bank < amt) { alert('Số tiền không hợp lệ!'); return; }
+            data.bank -= amt;
+            data.loan -= amt;
+            data.history.push({ text: '[Trả nợ NH] ' + amt.toLocaleString(), amount: amt, isWin: false });
+            saveUser(data);
+            updateAll();
+            closePayLoanModal();
+            alert('✅ Trả nợ thành công ' + amt.toLocaleString() + ' VNĐ!');
+        }
+
+        // ============================================================
+        // BLACK MARKET LOAN
+        // ============================================================
+        function borrowBlack(app, amount) {
+            const data = getUser();
+            if (!data) return;
+            const interest = amount * 1.5;
+            data.bank += amount;
+            data.blackDebt += interest;
+            data.history.push({ text: '[App Đen] ' + app + ' giải ngân', amount: amount, isWin: true });
+            saveUser(data);
+            updateAll();
+            document.getElementById('collectionStatus').textContent = '⚠️ ' + app + ' đã sao chép danh bạ của bạn!';
+            alert('💰 Nhận ' + amount.toLocaleString() + ' VNĐ từ ' + app + '! (Nợ phải trả: ' + interest.toLocaleString() + ')');
+        }
+
+        function payBlackDebt() {
+            const data = getUser();
+            if (!data || data.blackDebt <= 0) { alert('Bạn không có nợ app đen!'); return; }
+            if (data.bank < data.blackDebt) { alert('Không đủ tiền trả nợ!'); return; }
+            data.bank -= data.blackDebt;
+            data.history.push({ text: '[Trả nợ App Đen]', amount: data.blackDebt, isWin: false });
+            data.blackDebt = 0;
+            saveUser(data);
+            updateAll();
+            document.getElementById('collectionStatus').textContent = '✅ Đã thanh toán sạch sẽ!';
+            alert('✅ Thanh toán thành công toàn bộ nợ app đen!');
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        // Mặc định hiện auth
+        console.log('🔥 HỆ THỐNG VŨ TRỤ NGẦM LOADED!');
+    </script>
+</body>
+</html>
